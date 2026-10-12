@@ -15,7 +15,9 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'register'],
+    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'register', 'forgot-password', 'reset-password', 'user/*'],
+
+    'allowed_methods' => ['*'],
 
     'allowed_origins' => [env('FRONTEND_URL', 'https://wotnt.test:8443')],
 

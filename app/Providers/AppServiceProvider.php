@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -35,6 +38,33 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::before(function ($user, $ability) {
             return $user->hasRole('super_admin') ? true : null;
+        });
+
+        VerifyEmail::createUrlUsing(function ($notifiable) {
+            $id = $notifiable->getKey();
+            $hash = sha1($notifiable->getEmailForVerification());
+
+            // 1. Генерируем относительный signed URL для API-маршрута
+            $apiPath = URL::temporarySignedRoute(
+                'api.verification.verify',
+                Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
+                [
+                    'id' => $id,
+                    'hash' => $hash,
+                ],
+                absolute: false, // ← относительный URL
+            );
+
+            // $apiPath = "/api/email/verify/4/{hash}?expires=...&signature=..."
+
+            // 2. Извлекаем query-строку
+            $parsed = parse_url($apiPath);
+            $query = $parsed['query'] ?? '';
+
+            // 3. Формируем URL для Nuxt
+            $frontendUrl = rtrim(config('app.frontend_url'), '/');
+
+            return "{$frontendUrl}/auth/verify-email/{$id}/{$hash}?{$query}";
         });
     }
 }

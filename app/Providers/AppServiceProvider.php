@@ -44,27 +44,26 @@ class AppServiceProvider extends ServiceProvider
             $id = $notifiable->getKey();
             $hash = sha1($notifiable->getEmailForVerification());
 
-            // 1. Генерируем относительный signed URL для API-маршрута
-            $apiPath = URL::temporarySignedRoute(
-                'api.verification.verify',
-                Carbon::now()->addMinutes(Config::get('auth.verification.expire', 60)),
+            // Подписываем полный URL маршрута Laravel.
+            $apiUrl = URL::temporarySignedRoute(
+                'verification.verify',
+                Carbon::now()->addMinutes(
+                    Config::get('auth.verification.expire', 60)
+                ),
                 [
                     'id' => $id,
                     'hash' => $hash,
                 ],
-                absolute: false, // ← относительный URL
+                absolute: true,
             );
 
-            // $apiPath = "/api/email/verify/4/{hash}?expires=...&signature=..."
+            // Передаём параметры подписанного API URL на страницу Nuxt.
+            $query = parse_url($apiUrl, PHP_URL_QUERY);
 
-            // 2. Извлекаем query-строку
-            $parsed = parse_url($apiPath);
-            $query = $parsed['query'] ?? '';
-
-            // 3. Формируем URL для Nuxt
             $frontendUrl = rtrim(config('app.frontend_url'), '/');
 
             return "{$frontendUrl}/auth/verify-email/{$id}/{$hash}?{$query}";
         });
+
     }
 }

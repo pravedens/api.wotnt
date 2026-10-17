@@ -13,23 +13,24 @@ class CreateNewUser implements CreatesNewUsers
 {
     use PasswordValidationRules;
 
-    /**
-     * Validate and create a newly registered user.
-     *
-     * @param  array<string, string>  $input
-     *
-     * @throws ValidationException
-     */
     public function create(array $input): User
     {
         Validator::make($input, [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => [
+                'required',
+                'string',
+                'min:2',
+                'max:255',
+                'regex:/^[A-Za-zА-Яа-яЁё\s\-_]+$/u',
+            ],
             'email' => [
                 'required',
                 'string',
+                'lowercase',
                 'email',
                 'max:255',
                 Rule::unique(User::class),
+                'regex:/@(mail\.ru|gmail\.com|yandex\.ru)$/i',
             ],
             'password' => $this->passwordRules(),
         ])->validate();

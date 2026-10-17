@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -63,6 +64,14 @@ class AppServiceProvider extends ServiceProvider
             $frontendUrl = rtrim(config('app.frontend_url'), '/');
 
             return "{$frontendUrl}/auth/verify-email/{$id}/{$hash}?{$query}";
+        });
+
+        Password::defaults(function () {
+            return Password::min(8)
+                ->letters()
+                ->mixedCase()
+                ->numbers()
+                ->symbols();
         });
 
     }

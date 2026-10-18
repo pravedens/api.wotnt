@@ -12,14 +12,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
             'email_verified_at' => $request->user()->email_verified_at,
         ]);
     });
-
-    Route::post('/logout', function (Request $request) {
-        auth()->guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return response()->json(['message' => 'Logged out']);
-    });
 });
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {

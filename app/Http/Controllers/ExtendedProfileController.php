@@ -14,17 +14,22 @@ class ExtendedProfileController extends Controller
     public function update(Request $request)
     {
         $user = $request->user();
+        $consent = $request->boolean('consent_pd');
 
-        // Если пользователь еще не дал согласие, оно обязательно
-        if (! $user->consent_pd) {
-            $request->validate([
-                'consent_pd' => ['required', 'accepted'],
-            ], [
-                'consent_pd.required' => 'Необходимо согласие на обработку персональных данных.',
-                'consent_pd.accepted' => 'Необходимо согласие на обработку персональных данных.',
-            ]);
+        // ⚠️ 1. Если пользователь СНИМАЕТ галочку (было true, стало false)
+        if (!$consent && $user->consent_pd) {
+            return $this->revokeConsentLogic($user);
         }
 
+        // Если согласие так и не было дано, но пользователь пытается сохранить данные без галочки
+        if (!$consent && !$user->consent_pd) {
+            return response()->json([
+                'message' => 'Необходимо согласие на обработку персональных данных.',
+                'errors' => ['consent_pd' => ['Согласие обязательно.']]
+            ], 422);
+        }
+
+        // ⚠️ 2. Если согласие дано (или уже было), валидируем и сохраняем данные
         $validated = $request->validate([
             'last_name' => ['nullable', 'string', 'max:100', 'regex:/^[А-Яа-яЁёA-Za-z\s\-]+$/u'],
             'middle_name' => ['nullable', 'string', 'max:100', 'regex:/^[А-Яа-яЁёA-Za-z\s\-]+$/u'],
@@ -44,7 +49,7 @@ class ExtendedProfileController extends Controller
         ]);
 
         // Фиксируем согласие (если дано впервые)
-        if ($request->boolean('consent_pd') && ! $user->consent_pd) {
+        if (!$user->consent_pd) {
             $validated['consent_pd'] = true;
             $validated['consent_pd_at'] = now();
             $validated['consent_pd_ip'] = $request->ip();
@@ -54,6 +59,40 @@ class ExtendedProfileController extends Controller
 
         return response()->json([
             'message' => 'Данные профиля обновлены.',
+            'user' => $user->fresh(),
+        ]);
+    }
+
+    /**
+     * Логика отзыва согласия (очистка данных).
+     * Вызывается из update, когда пользователь снимает галочку.
+     */
+    private function revokeConsentLogic($user)
+    {
+        // Удаляем аватар из S3
+        if ($user->avatar_path) {
+            Storage::disk('yandex')->delete($user->avatar_path);
+        }
+
+        // Очищаем все дополнительные поля
+        $user->update([
+            'last_name' => null,
+            'middle_name' => null,
+            'phone' => null,
+            'city' => null,
+            'church_name' => null,
+            'birth_date' => null,
+            'about' => null,
+            'marital_status' => null,
+            'gender' => null,
+            'avatar_path' => null,
+            'consent_pd' => false,
+            'consent_pd_at' => null,
+            'consent_pd_ip' => null,
+        ]);
+
+        return response()->json([
+            'message' => 'Согласие отозвано, дополнительные данные и фото удалены.',
             'user' => $user->fresh(),
         ]);
     }

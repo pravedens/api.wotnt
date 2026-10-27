@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use App\Models\User;
+use App\Http\Resources\UserResource;
 
 class ExtendedProfileController extends Controller
 {
@@ -59,7 +61,7 @@ class ExtendedProfileController extends Controller
 
         return response()->json([
             'message' => 'Данные профиля обновлены.',
-            'user' => $user->fresh(),
+            'user' => UserResource::make($user->fresh())->resolve(),
         ]);
     }
 
@@ -67,7 +69,7 @@ class ExtendedProfileController extends Controller
      * Логика отзыва согласия (очистка данных).
      * Вызывается из update, когда пользователь снимает галочку.
      */
-    private function revokeConsentLogic($user)
+    private function revokeConsentLogic(User $user)
     {
         // Удаляем аватар из S3
         if ($user->avatar_path) {
@@ -93,7 +95,7 @@ class ExtendedProfileController extends Controller
 
         return response()->json([
             'message' => 'Согласие отозвано, дополнительные данные и фото удалены.',
-            'user' => $user->fresh(),
+            'user' => UserResource::make($user->fresh())->resolve(),
         ]);
     }
 
@@ -133,7 +135,7 @@ class ExtendedProfileController extends Controller
 
         return response()->json([
             'message' => 'Аватар обновлён.',
-            'user' => $user->fresh(),
+            'user' => UserResource::make($user->fresh())->resolve(),
         ]);
     }
 
@@ -151,7 +153,7 @@ class ExtendedProfileController extends Controller
 
         return response()->json([
             'message' => 'Аватар удалён.',
-            'user' => $user->fresh(),
+            'user' => UserResource::make($user->fresh())->resolve(),
         ]);
     }
 
@@ -187,7 +189,7 @@ class ExtendedProfileController extends Controller
 
         return response()->json([
             'message' => 'Согласие отозвано, дополнительные данные удалены.',
-            'user' => $user->fresh(),
+            'user' => UserResource::make($user->fresh())->resolve(),
         ]);
     }
 }

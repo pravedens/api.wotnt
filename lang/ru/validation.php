@@ -187,6 +187,14 @@ return [
         'email' => [
             'regex' => 'Email должен быть на одном из доменов: mail.ru, gmail.com, yandex.ru.',
         ],
+        'custom' => [
+            'code' => [
+                'required' => 'Необходимо ввести код подтверждения.',
+            ],
+        ],
+        'attributes' => [
+            'code' => 'Код подтверждения',
+        ],
     ],
 
     /*

@@ -6,10 +6,12 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Passkeys\Events\PasskeyRegistered;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -74,5 +76,17 @@ class AppServiceProvider extends ServiceProvider
                 ->symbols();
         });
 
+        Event::listen(PasskeyRegistered::class, function ($event) {
+            $user = $event->passkey->user;
+
+            // Если у пользователя была включена 2FA — отключаем её
+            if ($user->two_factor_secret) {
+                $user->forceFill([
+                    'two_factor_secret' => null,
+                    'two_factor_recovery_codes' => null,
+                    'two_factor_confirmed_at' => null,
+                ])->save();
+            }
+        });
     }
 }

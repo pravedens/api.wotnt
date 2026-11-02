@@ -12,15 +12,17 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Fortify\PasskeyAuthenticatable;
+use Laravel\Fortify\Contracts\PasskeyUser;
 
 #[Fillable(['name', 'email', 'password', 'last_name', 'middle_name', 'phone', 'city', 'church_name',
     'birth_date', 'about', 'marital_status', 'gender',
     'avatar_path', 'consent_pd', 'consent_pd_at', 'consent_pd_ip', ])]
 #[Hidden(['password', 'remember_token', 'consent_pd_ip'])]
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable, PasskeyAuthenticatable;
 
     /**
      * Get the attributes that should be cast.

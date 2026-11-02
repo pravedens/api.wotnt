@@ -145,8 +145,11 @@ return [
     */
 
     'passkeys' => [
-        'relying_party_id' => parse_url(config('app.url'), PHP_URL_HOST),
-        'allowed_origins' => [config('app.url')],
+        'relying_party_id' => 'wotnt.test',
+        'allowed_origins' => [
+            'https://wotnt.test:8443',
+            'https://api.wotnt.test:8443',
+        ],
         'timeout' => 60000,
     ],
 
@@ -172,9 +175,9 @@ return [
             'confirmPassword' => true,
             // 'window' => 0,
         ]),
-        //Features::passkeys([
-        //    'confirmPassword' => true,
-        //]),
+        Features::passkeys([
+            'confirmPassword' => true,
+        ]),
     ],
 
 ];

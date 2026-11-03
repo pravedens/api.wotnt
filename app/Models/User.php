@@ -12,8 +12,8 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Laravel\Fortify\TwoFactorAuthenticatable;
-use Laravel\Fortify\PasskeyAuthenticatable;
-use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Passkeys\PasskeyAuthenticatable;
+use Laravel\Passkeys\Contracts\PasskeyUser;
 
 #[Fillable(['name', 'email', 'password', 'last_name', 'middle_name', 'phone', 'city', 'church_name',
     'birth_date', 'about', 'marital_status', 'gender',

@@ -8,6 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Passkeys\Passkey;
 
 class ExtendedProfileController extends Controller
 {
@@ -19,12 +20,12 @@ class ExtendedProfileController extends Controller
         $user = $request->user();
         $consent = $request->boolean('consent_pd');
 
-        // 1. Если пользователь СНИМАЕТ галочку (было true, стало false)
+        // 1. Если пользователь СНИМАЕТ галочку
         if (! $consent && $user->consent_pd) {
             return $this->revokeConsentLogic($user);
         }
 
-        // 2. Если согласие так и не было дано, но пользователь пытается сохранить данные без галочки
+        // 2. Если согласие так и не было дано
         if (! $consent && ! $user->consent_pd) {
             return response()->json([
                 'message' => 'Необходимо согласие на обработку персональных данных.',
@@ -32,10 +33,9 @@ class ExtendedProfileController extends Controller
             ], 422);
         }
 
-        // 3. Валидированные данные (consent_pd уже проверен в Request)
+        // 3. Сохранение данных
         $validated = $request->validated();
 
-        // Фиксируем согласие (если дано впервые)
         if (! $user->consent_pd) {
             $validated['consent_pd'] = true;
             $validated['consent_pd_at'] = now();
@@ -44,7 +44,6 @@ class ExtendedProfileController extends Controller
 
         $user->update($validated);
 
-        // ✅ Логика назначения роли после согласия и подтверждения почты
         if ($user->consent_pd && $user->hasVerifiedEmail() && ! $user->hasRole('user')) {
             $user->assignRole('user');
         }
@@ -57,6 +56,7 @@ class ExtendedProfileController extends Controller
 
     /**
      * Логика отзыва согласия (очистка данных).
+     * ВЫЗЫВАЕТСЯ ИЗ МЕТОДА UPDATE, КОГДА СНИМАЮТ ГАЛОЧКУ.
      */
     private function revokeConsentLogic(User $user)
     {
@@ -78,7 +78,19 @@ class ExtendedProfileController extends Controller
             'consent_pd' => false,
             'consent_pd_at' => null,
             'consent_pd_ip' => null,
+
+            // ✅ УДАЛЯЕМ 2FA
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
         ]);
+
+        // ✅ УДАЛЯЕМ PASSKEYS (напрямую через модель, чтобы наверняка)
+        Passkey::where('user_id', $user->id)->delete();
+
+        // ✅ УДАЛЯЕМ ВСЕ РОЛИ (Spatie)
+        $user->syncRoles([]);
+        // или $user->roles()->detach(); (если не используете syncRoles)
 
         return response()->json([
             'message' => 'Согласие отозвано, дополнительные данные и фото удалены.',
@@ -97,7 +109,6 @@ class ExtendedProfileController extends Controller
             return response()->json(['message' => 'Необходимо согласие на обработку персональных данных.'], 403);
         }
 
-        // Удаляем старый файл
         if ($user->avatar_path) {
             Storage::disk('yandex')->delete($user->avatar_path);
         }
@@ -140,35 +151,10 @@ class ExtendedProfileController extends Controller
     }
 
     /**
-     * Отзыв согласия на обработку ПДн.
+     * Отзыв согласия на обработку ПДн (отдельный маршрут).
      */
     public function revokeConsent(Request $request)
     {
-        $user = $request->user();
-
-        if ($user->avatar_path) {
-            Storage::disk('yandex')->delete($user->avatar_path);
-        }
-
-        $user->update([
-            'last_name' => null,
-            'middle_name' => null,
-            'phone' => null,
-            'city' => null,
-            'church_name' => null,
-            'birth_date' => null,
-            'about' => null,
-            'marital_status' => null,
-            'gender' => null,
-            'avatar_path' => null,
-            'consent_pd' => false,
-            'consent_pd_at' => null,
-            'consent_pd_ip' => null,
-        ]);
-
-        return response()->json([
-            'message' => 'Согласие отозвано, дополнительные данные удалены.',
-            'user' => UserResource::make($user->fresh())->resolve(),
-        ]);
+        return $this->revokeConsentLogic($request->user());
     }
 }

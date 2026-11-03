@@ -29,7 +29,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         ResetPassword::createUrlUsing(function ($user, string $token) {
-            return 'https://wotnt.test:8443/auth/reset-password?'.http_build_query([
+            // ✅ Используем config, а не хардкод
+            $frontendUrl = rtrim(config('app.frontend_url'), '/');
+
+            return $frontendUrl.'/auth/reset-password?'.http_build_query([
                 'token' => $token,
                 'email' => $user->getEmailForPasswordReset(),
             ]);

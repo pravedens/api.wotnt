@@ -145,14 +145,14 @@ return [
     */
 
     'passkeys' => [
-        'relying_party_id' => 'wotnt.test',
-        'allowed_origins' => [
-            'https://wotnt.test:8443',
-            'https://api.wotnt.test:8443',
-        ],
+        // ✅ Берем из .env (по умолчанию для локалки)
+        'relying_party_id' => env('PASSKEYS_RELYING_PARTY_ID', 'wotnt.test'),
+
+        // ✅ Динамический массив из .env. explode(',') разбивает строку по запятой.
+        'allowed_origins' => explode(',', env('PASSKEYS_ALLOWED_ORIGINS', 'https://wotnt.test:8443,https://api.wotnt.test:8443')),
+
         'timeout' => 60000,
     ],
-
     /*
     |--------------------------------------------------------------------------
     | Features

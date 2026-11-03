@@ -14,12 +14,14 @@ use Spatie\Permission\Traits\HasRoles;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Passkeys\PasskeyAuthenticatable;
 use Laravel\Passkeys\Contracts\PasskeyUser;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
 #[Fillable(['name', 'email', 'password', 'last_name', 'middle_name', 'phone', 'city', 'church_name',
     'birth_date', 'about', 'marital_status', 'gender',
     'avatar_path', 'consent_pd', 'consent_pd_at', 'consent_pd_ip', ])]
 #[Hidden(['password', 'remember_token', 'consent_pd_ip'])]
-class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
+class User extends Authenticatable implements MustVerifyEmail, PasskeyUser, FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable, PasskeyAuthenticatable;
@@ -78,5 +80,11 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return Attribute::make(
             get: fn () => $this->consent_pd === true,
         );
+    }
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Разрешаем доступ только пользователям с ролью super_admin или admin
+        return $this->hasRole(['super_admin']);
     }
 }

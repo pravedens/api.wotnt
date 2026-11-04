@@ -9,6 +9,7 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Actions\EditAction;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
+use Filament\Tables\Filters\TernaryFilter;
 use Laravel\Passkeys\Passkey;
 use Spatie\Permission\Models\Role;
 
@@ -41,11 +42,27 @@ class UsersTable
                     ->label('2FA')
                     ->boolean()
                     ->getStateUsing(fn (User $record): bool => $record->two_factor_secret !== null),
+
+                // ✅ ДОБАВЛЕНО: Колонка "Ушел из жизни"
+                IconColumn::make('is_deceased')
+                    ->label('Ушел из жизни')
+                    ->boolean(),
+
                 TextColumn::make('created_at')
                     ->label('Дата регистрации')
                     ->dateTime()
                     ->sortable(),
             ])
+
+            // ✅ ДОБАВЛЕНО: Фильтр
+            ->filters([
+                TernaryFilter::make('is_deceased')
+                    ->label('Статус (жив/ушел)')
+                    ->placeholder('Все')
+                    ->trueLabel('Ушедшие')
+                    ->falseLabel('Живые'),
+            ])
+
             ->actions([
                 EditAction::make(),
 

@@ -19,7 +19,7 @@ use Filament\Panel;
 
 #[Fillable(['name', 'email', 'password', 'last_name', 'middle_name', 'phone', 'city', 'church_name',
     'birth_date', 'about', 'marital_status', 'gender',
-    'avatar_path', 'consent_pd', 'consent_pd_at', 'consent_pd_ip', ])]
+    'avatar_path', 'consent_pd', 'consent_pd_at', 'consent_pd_ip', 'is_deceased' ])]
 #[Hidden(['password', 'remember_token', 'consent_pd_ip'])]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser, FilamentUser
 {
@@ -39,6 +39,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser, Fila
             'birth_date' => 'date',
             'consent_pd' => 'boolean',
             'consent_pd_at' => 'datetime',
+            'is_deceased' => 'boolean',
         ];
     }
 

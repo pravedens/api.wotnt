@@ -4,8 +4,8 @@ namespace App\Filament\Resources\Users\Schemas;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -70,6 +70,10 @@ class UserForm
                         Toggle::make('consent_pd')
                             ->label('Согласие на обработку ПДн')
                             ->helperText('Если выключить, пользователь потеряет доступ к расширенному профилю, а роли и ключи безопасности будут сброшены.'),
+
+                        Toggle::make('is_deceased')
+                            ->label('Ушел из жизни')
+                            ->helperText('Пользователь будет отображаться в мемориальном разделе на главной странице.'),
                     ])->columns(2),
             ]);
     }

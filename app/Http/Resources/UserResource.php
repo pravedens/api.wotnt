@@ -42,6 +42,7 @@ class UserResource extends JsonResource
             'avatar_url' => $this->avatar_url,
             'consent_pd' => $this->consent_pd,
             'can_upload_avatar' => $this->can_upload_avatar,
+            'is_deceased' => (bool) $this->is_deceased,
         ];
     }
 

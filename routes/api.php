@@ -4,6 +4,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ExtendedProfileController;
 use App\Http\Resources\UserResource;
+use App\Http\Controllers\HomepageController;
+
+Route::get('/homepage', [HomepageController::class, 'index']);
 
 // --- Группа 1: Все авторизованные (включая неподтверждённых) ---
 Route::middleware(['auth:sanctum'])->group(function () {

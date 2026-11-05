@@ -74,6 +74,8 @@ class UserForm
                         Toggle::make('is_deceased')
                             ->label('Ушел из жизни')
                             ->helperText('Пользователь будет отображаться в мемориальном разделе на главной странице.'),
+                        DatePicker::make('death_date')->label('Дата смерти')->visible(fn ($get) => $get('is_deceased')),
+                        DatePicker::make('funeral_date')->label('Дата похорон')->visible(fn ($get) => $get('is_deceased')),
                     ])->columns(2),
             ]);
     }

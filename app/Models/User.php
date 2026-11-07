@@ -2,7 +2,11 @@
 
 namespace App\Models;
 
-//use Database\Factories\UserFactory;
+// use Database\Factories\UserFactory;
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthentication;
+use Filament\Auth\MultiFactor\App\Concerns\InteractsWithAppAuthenticationRecovery;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthentication;
+use Filament\Auth\MultiFactor\App\Contracts\HasAppAuthenticationRecovery;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -25,10 +29,10 @@ use Spatie\Permission\Traits\HasRoles;
     'avatar_path', 'consent_pd', 'consent_pd_at', 'consent_pd_ip', 'is_deceased', 'death_date', 'funeral_date',
 ])]
 #[Hidden(['password', 'remember_token', 'consent_pd_ip'])]
-class User extends Authenticatable implements FilamentUser, MustVerifyEmail, PasskeyUser
+class User extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery, MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, HasRoles, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, HasRoles, InteractsWithAppAuthentication, InteractsWithAppAuthenticationRecovery, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.
@@ -46,6 +50,8 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Pas
             'is_deceased' => 'boolean',
             'death_date' => 'date',
             'funeral_date' => 'date',
+            'app_authentication_secret' => 'encrypted',
+            'app_authentication_recovery_codes' => 'encrypted:array',
         ];
     }
 
@@ -91,7 +97,39 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail, Pas
 
     public function canAccessPanel(Panel $panel): bool
     {
-        // Разрешаем доступ только пользователям с ролью super_admin или admin
+        // Разрешаем доступ только пользователям с ролью super_admin
         return $this->hasRole(['super_admin']);
+    }
+
+    public function getAppAuthenticationSecret(): ?string
+    {
+        // Возвращаем значение из поля, которое вы создадите в БД
+        return $this->app_authentication_secret;
+    }
+
+    public function saveAppAuthenticationSecret(?string $secret): void
+    {
+        // Сохраняем секрет в поле
+        $this->app_authentication_secret = $secret;
+        $this->save();
+    }
+
+    public function getAppAuthenticationHolderName(): string
+    {
+        // Имя, которое пользователь увидит в приложении (например, email)
+        return $this->email;
+    }
+
+    // Чтение кодов
+    public function getAppAuthenticationRecoveryCodes(): ?array
+    {
+        return $this->app_authentication_recovery_codes;
+    }
+
+    // Сохранение кодов
+    public function saveAppAuthenticationRecoveryCodes(?array $codes): void
+    {
+        $this->app_authentication_recovery_codes = $codes;
+        $this->save();
     }
 }

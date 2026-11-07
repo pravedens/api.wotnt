@@ -2,8 +2,9 @@
 
 namespace App\Providers\Filament;
 
-use Filament\Http\Middleware\Authenticate;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
+use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -30,6 +31,12 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->authGuard('filament')
             ->login()
+            ->profile()
+                        // ✅ Включаем MFA через приложение-аутентификатор
+            ->multiFactorAuthentication([
+                AppAuthentication::make()
+                    ->recoverable(), // ✅ Включаем поддержку кодов восстановления
+            ])
             ->colors([
                 'primary' => Color::Amber,
             ])

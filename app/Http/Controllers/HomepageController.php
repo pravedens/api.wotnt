@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Holiday;
 use App\Models\HomepageSetting;
-use App\Models\User; // ✅ Импортируем настройки
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class HomepageController extends Controller
@@ -29,33 +29,32 @@ class HomepageController extends Controller
                         ->whereRaw("DATE_FORMAT(date, '%m-%d') = ?", [$today->format('m-d')]);
                 });
         })
-            ->orWhere(function ($query) use ($today) {
-                // Условие 2: Обычные праздники (только для текущего года)
-                $query->where('is_annual', false)
-                    ->whereDate('date', '<=', $today)
-                    ->where(function ($q) use ($today) {
-                        $q->whereDate('end_date', '>=', $today)
-                            ->orWhereNull('end_date');
-                    });
-            })
-            ->first();
+        ->orWhere(function ($query) use ($today) {
+            // Условие 2: Обычные праздники (только для текущего года)
+            $query->where('is_annual', false)
+                ->whereDate('date', '<=', $today)
+                ->where(function ($q) use ($today) {
+                    $q->whereDate('end_date', '>=', $today)
+                        ->orWhereNull('end_date');
+                });
+        })
+        ->first();
+
+        // ✅ Определяем, может ли пользователь видеть личные блоки
+        // (только если он авторизован и дал согласие)
+        $showPersonalBlocks = $request->user() && $request->user()->consent_pd;
 
         $data = [
             'holiday' => $holiday ? [
                 'title' => $holiday->title,
-
-                // ✅ Передаем дату начала (с учетом текущего года для ежегодных)
                 'date' => $holiday->is_annual
                     ? $holiday->date->copy()->year(now()->year)->format('d.m.Y')
                     : $holiday->date->format('d.m.Y'),
-
-                // ✅ Передаем дату окончания (тоже с учетом текущего года)
                 'end_date' => $holiday->end_date
                     ? ($holiday->is_annual
                         ? $holiday->end_date->copy()->year(now()->year)->format('d.m.Y')
                         : $holiday->end_date->format('d.m.Y'))
                     : null,
-
                 'description' => $holiday->description,
                 'image_url' => $holiday->image_url,
                 'styles' => [
@@ -65,31 +64,35 @@ class HomepageController extends Controller
                     'title_font_family' => $holiday->title_font_family,
                 ],
             ] : null,
+
+            // ✅ Передаем флаг на фронтенд
+            'show_personal_blocks' => $showPersonalBlocks,
+
+            // Инициализируем пустые массивы (они заполнятся ниже, если есть права)
             'birthdays' => [],
             'deceased' => [],
-            // ✅ Передаем стили для целых блоков (если настроек нет, ставим дефолт)
+
             'settings' => [
                 'birthdays' => HomepageSetting::get('birthdays') ?? (object) [
                     'title' => '🎉 Дни рождения в этом месяце',
                     'greeting_text' => 'Поздравляем наших дорогих братьев и сестер!',
-                    'bg_color' => '#2e1065', // Темно-фиолетовый
+                    'bg_color' => '#2e1065',
                     'text_color' => '#ffffff',
                     'font_family' => 'sans-serif',
                 ],
                 'deceased' => HomepageSetting::get('deceased') ?? (object) [
                     'title' => '🕊️ Помним и любим',
                     'greeting_text' => 'Светлая память о наших ушедших братьях и сестрах.',
-                    'bg_color' => '#111827', // Темно-серый
+                    'bg_color' => '#111827',
                     'text_color' => '#d1d5db',
                     'font_family' => 'serif',
                 ],
             ],
         ];
 
-        // 2 и 3. Только для авторизованных и с согласием
-        if ($request->user() && $request->user()->consent_pd) {
-
-            // Дни рождения (БЕЗ индивидуальных стилей)
+        // 2 и 3. Заполняем данные, только если есть права
+        if ($showPersonalBlocks) {
+            // Дни рождения
             $birthdays = User::whereMonth('birth_date', now()->month)
                 ->where('is_deceased', false)
                 ->whereNotNull('birth_date')

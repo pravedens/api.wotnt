@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureConsentPd;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -17,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Все запросы — API, редиректы не нужны. Возвращаем 401.
         $middleware->redirectGuestsTo(fn () => null);
+
+        $middleware->alias([
+            'consent' => EnsureConsentPd::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

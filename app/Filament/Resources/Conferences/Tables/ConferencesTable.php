@@ -15,8 +15,10 @@ class ConferencesTable
         return $table
             ->columns([
                 TextColumn::make('title')
+                    ->label('Мероприятие')
                     ->searchable(),
                 TextColumn::make('slug')
+                    ->visibleFrom('md') // показывать только на md и шире
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()

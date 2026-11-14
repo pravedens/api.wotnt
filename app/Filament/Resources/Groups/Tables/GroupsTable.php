@@ -15,8 +15,11 @@ class GroupsTable
         return $table
             ->columns([
                 TextColumn::make('title')
-                    ->searchable(),
+                    ->label('Год')
+                    ->searchable()
+                    ->sortable(),
                 TextColumn::make('slug')
+                    ->visibleFrom('md') // показывать только на md и ширерьше
                     ->searchable(),
                 TextColumn::make('created_at')
                     ->dateTime()

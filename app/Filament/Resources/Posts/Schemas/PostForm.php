@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Posts\Schemas;
 
 use Filament\Facades\Filament;
+use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -42,6 +43,17 @@ class PostForm
                                             ->required()
                                             ->maxLength(255)
                                             ->unique(ignoreRecord: true),
+
+                                        DateTimePicker::make('created_at')
+                                            ->label('Дата создания')
+                                            ->required(),
+
+                                        Select::make('user_id')
+                                            ->label('Автор')
+                                            ->relationship('author', 'name')
+                                            ->searchable()
+                                            ->preload()
+                                            ->default(fn () => Filament::auth()->id()),
 
                                         Textarea::make('description')
                                             ->label('Краткое описание')
@@ -83,14 +95,6 @@ class PostForm
                                             ->relationship('conference', 'title')
                                             ->searchable()
                                             ->preload()
-                                            ->required(),
-
-                                        Select::make('user_id')
-                                            ->label('Автор')
-                                            ->relationship('author', 'name')
-                                            ->searchable()
-                                            ->preload()
-                                            ->default(fn () => Filament::auth()->id())
                                             ->required(),
                                     ]),
 

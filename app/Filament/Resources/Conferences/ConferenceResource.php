@@ -9,6 +9,7 @@ use App\Filament\Resources\Conferences\Schemas\ConferenceForm;
 use App\Filament\Resources\Conferences\Tables\ConferencesTable;
 use App\Models\Conference;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -17,6 +18,10 @@ use Filament\Tables\Table;
 class ConferenceResource extends Resource
 {
     protected static ?string $model = Conference::class;
+
+    protected static ?string $navigationLabel = 'Мероприятие';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Проповеди';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 

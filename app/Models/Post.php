@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'thumbnail', 'youtube', 'rutube', 'dzen', 'vkVideo',
     'audio_file', 'audio_filename', 'audio_size', 'audio_mime', 'audio',
     'text', 'text_file', 'text_filename', 'text_size', 'text_mime',
-    'views_count', 'likes_count',
+    'views_count', 'likes_count', 'created_at'
 ])]
 class Post extends Model
 {

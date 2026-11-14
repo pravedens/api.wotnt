@@ -9,6 +9,7 @@ use App\Filament\Resources\Posts\Schemas\PostForm;
 use App\Filament\Resources\Posts\Tables\PostsTable;
 use App\Models\Post;
 use BackedEnum;
+use UnitEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -17,6 +18,10 @@ use Filament\Tables\Table;
 class PostResource extends Resource
 {
     protected static ?string $model = Post::class;
+
+    protected static ?string $navigationLabel = 'Публикация';
+
+    protected static string|UnitEnum|null $navigationGroup = 'Проповеди';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 

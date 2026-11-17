@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\PostController;
 use App\Http\Controllers\ExtendedProfileController;
 use App\Http\Controllers\HomepageController;
 use App\Http\Resources\UserResource;
+use App\Services\DailyVerseService;
+use App\Http\Controllers\Api\DailyVerseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -51,3 +53,15 @@ Route::middleware(['auth:sanctum', 'verified', 'consent'])->group(function () {
     Route::post('/comments/{comment}/like', [CommentController::class, 'toggleLike']);
     Route::get('/user/favorites', [PostController::class, 'favorites']);
 });
+
+Route::get('/daily-verse', function (DailyVerseService $service) {
+    $verse = $service->getRandom();
+
+    if (! $verse) {
+        return response()->json(['error' => 'Стихи дня не найдены'], 404);
+    }
+
+    return response()->json($verse);
+});
+
+Route::get('/daily-verse', DailyVerseController::class);

@@ -13,6 +13,12 @@ return new class extends Migration
     {
         Schema::create('daily_verses', function (Blueprint $table) {
             $table->id();
+            $table->unsignedSmallInteger('book_id')->nullable();
+            $table->unsignedSmallInteger('chapter_id')->nullable();
+            $table->unsignedSmallInteger('verse_id')->nullable();
+            $table->unsignedSmallInteger('verse_to_id')->nullable();
+            $table->string('reference');
+            $table->text('text');
             $table->timestamps();
         });
     }

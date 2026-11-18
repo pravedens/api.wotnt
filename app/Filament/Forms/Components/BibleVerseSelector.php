@@ -3,6 +3,7 @@
 namespace App\Filament\Forms\Components;
 
 use App\Models\BibleVerse;
+use App\Models\DailyVerse;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -14,24 +15,19 @@ class BibleVerseSelector
     /**
      * Возвращает массив полей для вставки в любую форму Filament.
      *
-     * @param string $prefix   Префикс для имен полей (чтобы не конфликтовать с другими полями формы)
-     * @param bool   $withRange Нужен ли выбор диапазона стихов
+     * @param  string  $prefix  Префикс для имен полей (чтобы не конфликтовать с другими полями формы)
+     * @param  bool  $withRange  Нужен ли выбор диапазона стихов
      */
     public static function make(string $prefix = 'bible', bool $withRange = true): array
     {
-        $p = fn (string $key) => $prefix . '_' . $key;
+        $p = fn (string $key) => $prefix.'_'.$key;
 
         $fields = [
             Select::make($p('book_id'))
                 ->label('Книга')
-                ->options(fn () => BibleVerse::query()
-                    ->select('book_id', 'book_name')
-                    ->distinct()
-                    ->orderBy('book_id')
-                    ->pluck('book_name', 'book_id')
-                    ->toArray()
-                )
+                ->options(config('bible.books')) // Берем чистый массив
                 ->searchable()
+                ->optionsLimit(100)
                 ->required()
                 ->live()
                 ->afterStateUpdated(function (Set $set) use ($p) {
@@ -39,13 +35,16 @@ class BibleVerseSelector
                     $set($p('verse_id'), null);
                     $set($p('verse_to_id'), null);
                     $set($p('text'), null);
+                    $set($p('reference'), null);
                 }),
 
             Select::make($p('chapter_id'))
                 ->label('Глава')
                 ->options(function (Get $get) use ($p) {
                     $bookId = $get($p('book_id'));
-                    if (!$bookId) return [];
+                    if (! $bookId) {
+                        return [];
+                    }
 
                     return BibleVerse::query()
                         ->where('book_id', $bookId)
@@ -77,9 +76,11 @@ class BibleVerseSelector
         $fields[] = Select::make($p('verse_id'))
             ->label($withRange ? 'Стих (от)' : 'Стих')
             ->options(function (Get $get) use ($p) {
-                $bookId    = $get($p('book_id'));
+                $bookId = $get($p('book_id'));
                 $chapterId = $get($p('chapter_id'));
-                if (!$bookId || !$chapterId) return [];
+                if (! $bookId || ! $chapterId) {
+                    return [];
+                }
 
                 return BibleVerse::query()
                     ->where('book_id', $bookId)
@@ -97,10 +98,12 @@ class BibleVerseSelector
             $fields[] = Select::make($p('verse_to_id'))
                 ->label('Стих (до)')
                 ->options(function (Get $get) use ($p) {
-                    $bookId    = $get($p('book_id'));
+                    $bookId = $get($p('book_id'));
                     $chapterId = $get($p('chapter_id'));
-                    $from      = $get($p('verse_id'));
-                    if (!$bookId || !$chapterId || !$from) return [];
+                    $from = $get($p('verse_id'));
+                    if (! $bookId || ! $chapterId || ! $from) {
+                        return [];
+                    }
 
                     return BibleVerse::query()
                         ->where('book_id', $bookId)
@@ -119,13 +122,23 @@ class BibleVerseSelector
 
         $fields[] = Textarea::make($p('reference'))
             ->label('Ссылка (авто)')
-            ->readOnly()
+            ->disabled()
+            ->dehydrated()
             ->rows(1)
-            ->columnSpanFull();
+            ->columnSpanFull()
+            ->unique(
+                table: DailyVerse::class,
+                column: 'reference',
+                ignoreRecord: true,
+            )
+            ->validationMessages([
+                'unique' => 'Такой стих уже добавлен в список стихов дня.',
+            ]);
 
         $fields[] = Textarea::make($p('text'))
             ->label('Текст (авто)')
-            ->readOnly()
+            ->disabled()
+            ->dehydrated()
             ->rows(6)
             ->columnSpanFull();
 
@@ -134,17 +147,18 @@ class BibleVerseSelector
 
     protected static function updateText(Get $get, Set $set, string $prefix, bool $withRange): void
     {
-        $p = fn (string $key) => $prefix . '_' . $key;
+        $p = fn (string $key) => $prefix.'_'.$key;
 
-        $bookId    = $get($p('book_id'));
+        $bookId = $get($p('book_id'));
         $chapterId = $get($p('chapter_id'));
         $verseFrom = $get($p('verse_id'));
-        $isRange   = $withRange ? (bool) $get($p('is_range')) : false;
-        $verseTo   = $isRange ? $get($p('verse_to_id')) : $verseFrom;
+        $isRange = $withRange ? (bool) $get($p('is_range')) : false;
+        $verseTo = $isRange ? $get($p('verse_to_id')) : $verseFrom;
 
-        if (!$bookId || !$chapterId || !$verseFrom) {
+        if (! $bookId || ! $chapterId || ! $verseFrom) {
             $set($p('text'), null);
             $set($p('reference'), null);
+
             return;
         }
 
@@ -163,6 +177,7 @@ class BibleVerseSelector
         if ($verses->isEmpty()) {
             $set($p('text'), 'Стих не найден');
             $set($p('reference'), null);
+
             return;
         }
 

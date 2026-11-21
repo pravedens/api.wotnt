@@ -3,7 +3,6 @@
 namespace App\Filament\Forms\Components;
 
 use App\Models\BibleVerse;
-use App\Models\DailyVerse;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -18,8 +17,12 @@ class BibleVerseSelector
      * @param  string  $prefix  Префикс для имен полей (чтобы не конфликтовать с другими полями формы)
      * @param  bool  $withRange  Нужен ли выбор диапазона стихов
      */
-    public static function make(string $prefix = 'bible', bool $withRange = true): array
-    {
+    public static function make(
+        string $prefix = 'bible',
+        bool $withRange = true,
+        ?string $uniqueTable = null,
+        string $uniqueColumn = 'reference'
+    ): array {
         $p = fn (string $key) => $prefix.'_'.$key;
 
         $fields = [
@@ -120,20 +123,25 @@ class BibleVerseSelector
                 ->afterStateUpdated(fn (Get $get, Set $set) => self::updateText($get, $set, $prefix, $withRange));
         }
 
-        $fields[] = Textarea::make($p('reference'))
+        $referenceField = Textarea::make($p('reference'))
             ->label('Ссылка (авто)')
             ->disabled()
             ->dehydrated()
             ->rows(1)
-            ->columnSpanFull()
-            ->unique(
-                table: DailyVerse::class,
-                column: 'reference',
+            ->columnSpanFull();
+
+        // Если передали таблицу для проверки — добавляем правило unique
+        if ($uniqueTable) {
+            $referenceField->unique(
+                table: $uniqueTable,
+                column: $uniqueColumn,
                 ignoreRecord: true,
-            )
-            ->validationMessages([
-                'unique' => 'Такой стих уже добавлен в список стихов дня.',
+            )->validationMessages([
+                'unique' => 'Такой стих уже добавлен в этот список.',
             ]);
+        }
+
+        $fields[] = $referenceField;
 
         $fields[] = Textarea::make($p('text'))
             ->label('Текст (авто)')

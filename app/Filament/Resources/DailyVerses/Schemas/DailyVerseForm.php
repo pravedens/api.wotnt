@@ -2,8 +2,9 @@
 
 namespace App\Filament\Resources\DailyVerses\Schemas;
 
-use Filament\Schemas\Schema;
 use App\Filament\Forms\Components\BibleVerseSelector;
+use App\Models\DailyVerse;
+use Filament\Schemas\Schema;
 
 class DailyVerseForm
 {
@@ -11,7 +12,12 @@ class DailyVerseForm
     {
         return $schema
             ->schema([
-                ...BibleVerseSelector::make(prefix: 'bible', withRange: true),
+                ...BibleVerseSelector::make(
+                    prefix: 'bible',
+                    withRange: true,
+                    uniqueTable: DailyVerse::class,
+                    uniqueColumn: 'reference'
+                ),
             ]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Posts\Schemas;
 
+use App\Filament\Forms\Components\VideoSelector;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
@@ -121,29 +122,13 @@ class PostForm
                             ]),
 
                         // ─────────────── ВКЛАДКА 2: Видео ───────────────
+
                         Tab::make('Видео')
                             ->schema([
-                                Section::make('Ссылки на видеоплатформы')
-                                    ->columns(2)
+                                Section::make('Права доступа к видео')
+                                    ->description('Настройте, кто может просматривать видео (Rutube / VK) на фронтенде.')
                                     ->schema([
-                                        TextInput::make('rutube')
-                                            ->label('Rutube (URL)')
-                                            ->url()
-                                            ->maxLength(255),
-
-                                        TextInput::make('youtube')
-                                            ->label('YouTube (ID или URL)')
-                                            ->maxLength(255),
-
-                                        TextInput::make('dzen')
-                                            ->label('Дзен (URL)')
-                                            ->url()
-                                            ->maxLength(255),
-
-                                        TextInput::make('vkVideo')
-                                            ->label('VK Видео (URL)')
-                                            ->url()
-                                            ->maxLength(255),
+                                        ...VideoSelector::make('video'),
                                     ]),
                             ]),
 

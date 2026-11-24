@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Gate;
 
 class PostResource extends JsonResource
 {
@@ -64,6 +65,22 @@ class PostResource extends JsonResource
             // Персонализация
             'is_liked' => $this->when(isset($this->is_liked), $this->is_liked),
             'is_favorited' => $this->when(isset($this->is_favorited), $this->is_favorited),
+
+            'video' => $this->when(
+                $this->rutube || $this->vkVideo,
+                function () {
+                    $canView = Gate::allows('viewVideo', $this->resource);
+
+                    return [
+                        'platform' => $this->rutube ? 'rutube' : 'vk',
+                        'url' => $this->rutube ?? $this->vkVideo,
+                        'can_view' => $canView,
+                        'message' => $canView
+                            ? null
+                            : 'Это видео могут смотреть только пользователи с определёнными правами.',
+                    ];
+                }
+            ),
         ];
     }
 }

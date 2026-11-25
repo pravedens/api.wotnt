@@ -19,9 +19,9 @@ class PostPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Post $post): bool
+    public function view(User $user, Post $post): Response
     {
-        return false;
+        return $this->viewVideo($user, $post);
     }
 
     /**
@@ -66,20 +66,21 @@ class PostPolicy
 
     public function viewVideo(?User $user, Post $post): Response
     {
-        // Если видео публичное — пускаем всех
         if ($post->video_public) {
             return Response::allow();
         }
 
-        // Если пользователь не авторизован — запрещаем
         if (! $user) {
             return Response::deny('Видео доступно только авторизованным пользователям.');
         }
 
-        // Проверка роли
+        // Проверка ролей (Spatie)
         $allowedRoles = $post->video_allowed_roles ?? [];
-        if (! empty($allowedRoles) && ! in_array($user->role, $allowedRoles, true)) {
-            return Response::deny('У вас нет роли, которая может смотреть это видео.');
+        if (! empty($allowedRoles)) {
+            $userRoles = $user->getRoleNames()->toArray();
+            if (empty(array_intersect($userRoles, $allowedRoles))) {
+                return Response::deny('У вас нет роли, которая может смотреть это видео.');
+            }
         }
 
         // Проверка пола

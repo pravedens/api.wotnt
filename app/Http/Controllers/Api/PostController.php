@@ -7,10 +7,13 @@ use App\Http\Resources\PostResource;
 use App\Models\Favorite;
 use App\Models\Post;
 use App\Models\PostStat;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
@@ -22,6 +25,7 @@ class PostController extends Controller
         $user = $request->user();
 
         $query = Post::with(['category', 'conference', 'group', 'author']);
+        $query = $this->filterVisiblePosts($query, $user); // Применили фильтр
 
         // Умный фильтр по спикеру (category), году (group), мероприятию (conference)
         $query->when($request->filled('category'), fn ($q) => $q->whereHas(
@@ -55,10 +59,51 @@ class PostController extends Controller
             $posts->each(function (Post $post) use ($likedPostIds): void {
                 $post->is_liked = $likedPostIds->has($post->id);
             });
-
         }
 
         return PostResource::collection($posts);
+    }
+
+    /**
+     * Фильтрация постов, которые может видеть пользователь.
+     */
+    private function filterVisiblePosts(Builder $query, ?User $user): Builder
+    {
+        return $query->where(function ($q) use ($user) {
+            // 1. Публичные посты
+            $q->where('video_public', true);
+
+            // 2. Приватные посты (только для авторизованных)
+            if ($user) {
+                // Получаем роли пользователя ОДИН раз (это кэшируется в модели)
+                $userRoles = $user->getRoleNames()->toArray();
+
+                $q->orWhere(function ($sub) use ($user, $userRoles) {
+                    $sub->where('video_public', false);
+
+                    // --- Проверка ролей ---
+                    // Если у пользователя есть роли и они не пустые
+                    if (! empty($userRoles)) {
+                        $sub->where(function ($roleQ) use ($userRoles) {
+                            // Пост не имеет ограничений по ролям ИЛИ роли пользователя пересекаются с разрешенными
+                            $roleQ->whereNull('video_allowed_roles');
+                            foreach ($userRoles as $role) {
+                                $roleQ->orWhereJsonContains('video_allowed_roles', $role);
+                            }
+                        });
+                    } else {
+                        // Если у пользователя нет ролей, он может видеть только посты без ограничений по ролям
+                        $sub->whereNull('video_allowed_roles');
+                    }
+
+                    // --- Проверка пола ---
+                    $sub->where(function ($genderQ) use ($user) {
+                        $genderQ->whereNull('video_allowed_genders')
+                            ->orWhereJsonContains('video_allowed_genders', $user->gender);
+                    });
+                });
+            }
+        });
     }
 
     /**
@@ -70,10 +115,14 @@ class PostController extends Controller
         $limit = (int) $request->input('limit', 4);
         $limit = max(1, min($limit, 20)); // защита от дурака
 
-        $posts = Post::with(['category', 'conference', 'group', 'author'])
-            ->latest()
-            ->limit($limit)
-            ->get();
+        // 1. Создаем запрос
+        $query = Post::with(['category', 'conference', 'group', 'author']);
+
+        // 2. Применяем фильтр видимости
+        $query = $this->filterVisiblePosts($query, $user);
+
+        // 3. Получаем посты
+        $posts = $query->latest()->limit($limit)->get();
 
         // Синхронизация лайков для авторизованных (как в index)
         if ($user) {
@@ -97,6 +146,13 @@ class PostController extends Controller
      */
     public function show(Request $request, Post $post): PostResource
     {
+        // Проверяем доступ
+        $canView = Gate::allows('viewVideo', $post);
+
+        if (! $canView) {
+            abort(403, 'У вас нет прав на просмотр этой проповеди.');
+        }
+
         $post->load([
             'category',
             'conference',
@@ -253,10 +309,15 @@ class PostController extends Controller
 
     public function favorites(Request $request): AnonymousResourceCollection
     {
-        $posts = Post::whereHas('favorites', fn ($q) => $q->where('user_id', $request->user()->id))
-            ->with(['category', 'conference', 'group', 'author'])
-            ->latest()
-            ->paginate(8);
+        $user = $request->user();
+
+        $query = Post::whereHas('favorites', fn ($q) => $q->where('user_id', $user->id))
+            ->with(['category', 'conference', 'group', 'author']);
+
+        // Применяем фильтр видимости
+        $query = $this->filterVisiblePosts($query, $user);
+
+        $posts = $query->latest()->paginate(8);
 
         return PostResource::collection($posts);
     }

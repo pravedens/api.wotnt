@@ -13,6 +13,21 @@ class PostResource extends JsonResource
         $user = $request->user();
         $canAccessMedia = $user && $user->consent_pd;
 
+        // Проверяем доступ к видео
+        $canViewVideo = Gate::allows('viewVideo', $this->resource);
+
+        // ❌ Если доступа нет, возвращаем только минимальные данные (и выходим)
+        if (! $canViewVideo) {
+            return [
+                'id' => $this->id,
+                'slug' => $this->slug,
+                'title' => $this->title,
+                'is_private' => true,
+            ];
+        }
+
+        // ✅ Если доступ есть, возвращаем всё остальное (основной return)
+
         return [
             'id' => $this->id,
             'title' => $this->title,

@@ -75,26 +75,22 @@ class PostController extends Controller
 
             // 2. Приватные посты (только для авторизованных)
             if ($user) {
-                // Получаем роли пользователя ОДИН раз (это кэшируется в модели)
-                $userRoles = $user->getRoleNames()->toArray();
+                // Получаем роли пользователя через Spatie
+                $userRoles = $user->getRoleNames()->toArray(); // ['user', 'member']
 
                 $q->orWhere(function ($sub) use ($user, $userRoles) {
                     $sub->where('video_public', false);
 
-                    // --- Проверка ролей ---
-                    // Если у пользователя есть роли и они не пустые
-                    if (! empty($userRoles)) {
-                        $sub->where(function ($roleQ) use ($userRoles) {
-                            // Пост не имеет ограничений по ролям ИЛИ роли пользователя пересекаются с разрешенными
-                            $roleQ->whereNull('video_allowed_roles');
-                            foreach ($userRoles as $role) {
-                                $roleQ->orWhereJsonContains('video_allowed_roles', $role);
-                            }
-                        });
-                    } else {
-                        // Если у пользователя нет ролей, он может видеть только посты без ограничений по ролям
-                        $sub->whereNull('video_allowed_roles');
-                    }
+                    // --- Проверка ролей через JSON_OVERLAPS ---
+                    $sub->where(function ($roleQ) use ($userRoles) {
+                        // Если у поста нет ограничений по ролям — пускаем всех
+                        $roleQ->whereNull('video_allowed_roles');
+
+                        // Если у пользователя есть роли, проверяем пересечение
+                        if (! empty($userRoles)) {
+                            $roleQ->orWhereJsonOverlaps('video_allowed_roles', $userRoles);
+                        }
+                    });
 
                     // --- Проверка пола ---
                     $sub->where(function ($genderQ) use ($user) {

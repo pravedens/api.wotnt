@@ -23,6 +23,12 @@ class PostResource extends JsonResource
                 'slug' => $this->slug,
                 'title' => $this->title,
                 'is_private' => true,
+                'video' => [
+                    'can_view' => false,
+                    'message' => 'У вас нет прав на просмотр этого видео.',
+                    'platform' => null,
+                    'url' => null,
+                ],
             ];
         }
 

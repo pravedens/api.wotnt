@@ -6,6 +6,7 @@ use App\Filament\Forms\Components\VideoSelector;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -128,6 +129,8 @@ class PostForm
                                 Section::make('Права доступа к видео')
                                     ->description('Настройте, кто может просматривать видео (Rutube / VK) на фронтенде.')
                                     ->schema([
+                                        Hidden::make('rutube'), 
+                                        Hidden::make('vkVideo'),
                                         ...VideoSelector::make('video'),
                                     ]),
                             ]),

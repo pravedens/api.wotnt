@@ -16,4 +16,18 @@ class EditPost extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Та же страховка для редактирования
+        if (! empty($data['video_platform']) && ! empty($data['video_url'])) {
+            if ($data['video_platform'] === 'rutube') {
+                $data['rutube'] = $data['video_url'];
+            } elseif ($data['video_platform'] === 'vk') {
+                $data['vkVideo'] = $data['video_url'];
+            }
+        }
+
+        return $data;
+    }
 }

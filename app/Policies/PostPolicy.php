@@ -66,6 +66,11 @@ class PostPolicy
 
     public function viewVideo(?User $user, Post $post): Response
     {
+        // 1. Супер-админ видит всё
+        if ($user && $user->hasRole('super_admin')) {
+            return Response::allow();
+        }
+
         if ($post->video_public) {
             return Response::allow();
         }

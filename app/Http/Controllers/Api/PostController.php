@@ -69,6 +69,11 @@ class PostController extends Controller
      */
     private function filterVisiblePosts(Builder $query, ?User $user): Builder
     {
+        // Если пользователь — супер-админ, он видит всё
+        if ($user && $user->hasRole('super_admin')) {
+            return $query;
+        }
+
         return $query->where(function ($q) use ($user) {
             // 1. Публичные посты
             $q->where('video_public', true);

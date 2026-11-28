@@ -8,4 +8,9 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateConference extends CreateRecord
 {
     protected static string $resource = ConferenceResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }
